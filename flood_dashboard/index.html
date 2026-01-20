@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Disaster Risk Analysis Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo" onclick="resetDashboard()" style="cursor: pointer;">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <h1>Flood Risk Analysis</h1>
+                </div>
+                <nav class="nav-tabs">
+                    <button class="nav-tab" data-tab="hazard">HAZARD</button>
+                    <button class="nav-tab active" data-tab="risk">RISK</button>
+                    <button class="nav-tab" data-tab="cost-benefit">COST-BENEFIT ANALYZER</button>
+                </nav>
+                <div class="header-actions">
+                    <button class="btn-icon" title="Download Report">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon" title="Share">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"/>
+                            <circle cx="6" cy="12" r="3"/>
+                            <circle cx="18" cy="19" r="3"/>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar Controls -->
+            <aside class="sidebar">
+                <!-- Common: Country Selection (always visible) -->
+                <div class="control-group">
+                    <label class="control-label">
+                        Select a location
+                        <span class="tooltip-icon" title="Choose a country to analyze flood risk data">?</span>
+                    </label>
+                    <select id="country-select" class="select-input">
+                        <option value="bangladesh">Bangladesh</option>
+                        <option value="turkey">Turkey</option>
+                    </select>
+                </div>
+
+                <!-- RISK Tab Filters -->
+                <div class="tab-filters" id="risk-filters">
+                    <div class="control-group">
+                        <label class="control-label">
+                            Flood Type
+                            <span class="tooltip-icon" title="Type of flood event to analyze">?</span>
+                        </label>
+                        <select id="flood-type-select" class="select-input">
+                            <option value="all">All Floods</option>
+                            <option value="riverine">Riverine</option>
+                            <option value="flash">Flash Flood</option>
+                            <option value="coastal">Coastal Flood</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Risk Indicator
+                            <span class="tooltip-icon" title="Select the metric to visualize">?</span>
+                        </label>
+                        <select id="risk-indicator-select" class="select-input">
+                            <option value="damage">Economic Damage</option>
+                            <option value="deaths">Total Deaths</option>
+                            <option value="affected">Population Affected</option>
+                            <option value="events">Event Frequency</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Compare with
+                        </label>
+                        <select id="compare-select" class="select-input">
+                            <option value="">Compare with...</option>
+                            <option value="bangladesh">Bangladesh</option>
+                            <option value="turkey">Turkey</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-predictions">
+                            <span class="checkmark"></span>
+                            Show Future Predictions
+                        </label>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-uncertainty">
+                            <span class="checkmark"></span>
+                            Show Uncertainty
+                        </label>
+                    </div>
+                </div>
+
+                <!-- HAZARD Tab Filters -->
+                <div class="tab-filters" id="hazard-filters" style="display: none;">
+                    <div class="control-group">
+                        <label class="control-label">
+                            Hazard Type
+                            <span class="tooltip-icon" title="Filter by flood hazard type">?</span>
+                        </label>
+                        <select id="hazard-type-select" class="select-input">
+                            <option value="all">All Flood Types</option>
+                            <option value="riverine">Riverine Floods</option>
+                            <option value="flash">Flash Floods</option>
+                            <option value="coastal">Coastal Floods</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Time Period
+                            <span class="tooltip-icon" title="Select time range for analysis">?</span>
+                        </label>
+                        <select id="hazard-period-select" class="select-input">
+                            <option value="all">All Years (2000-2024)</option>
+                            <option value="recent">Recent (2015-2024)</option>
+                            <option value="mid">Mid Period (2010-2014)</option>
+                            <option value="early">Early Period (2000-2009)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Severity Filter
+                            <span class="tooltip-icon" title="Filter by event severity">?</span>
+                        </label>
+                        <select id="hazard-severity-select" class="select-input">
+                            <option value="all">All Severities</option>
+                            <option value="high">High Severity Only</option>
+                            <option value="medium">Medium & Above</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-deaths-overlay" checked>
+                            <span class="checkmark"></span>
+                            Show Deaths Overlay
+                        </label>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="compare-countries-hazard">
+                            <span class="checkmark"></span>
+                            Compare Countries
+                        </label>
+                    </div>
+                </div>
+
+                <!-- COST-BENEFIT Tab Filters -->
+                <div class="tab-filters" id="cost-benefit-filters" style="display: none;">
+                    <div class="control-group">
+                        <label class="control-label">
+                            Analysis Scenario
+                            <span class="tooltip-icon" title="Select investment scenario">?</span>
+                        </label>
+                        <select id="cb-scenario-select" class="select-input">
+                            <option value="baseline">Baseline Scenario</option>
+                            <option value="aggressive">Aggressive Investment</option>
+                            <option value="conservative">Conservative</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Projection Period
+                            <span class="tooltip-icon" title="Investment projection timeframe">?</span>
+                        </label>
+                        <select id="cb-period-select" class="select-input">
+                            <option value="10">10 Years</option>
+                            <option value="15">15 Years</option>
+                            <option value="20">20 Years</option>
+                            <option value="25">25 Years</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Discount Rate
+                            <span class="tooltip-icon" title="Annual discount rate for NPV">?</span>
+                        </label>
+                        <select id="cb-discount-select" class="select-input">
+                            <option value="3">3% (Low)</option>
+                            <option value="5">5% (Standard)</option>
+                            <option value="7">7% (High)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">
+                            Focus Area
+                            <span class="tooltip-icon" title="Mitigation focus area">?</span>
+                        </label>
+                        <select id="cb-focus-select" class="select-input">
+                            <option value="all">All Strategies</option>
+                            <option value="infrastructure">Infrastructure</option>
+                            <option value="warning">Early Warning</option>
+                            <option value="community">Community Programs</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-breakeven">
+                            <span class="checkmark"></span>
+                            Show Break-even Point
+                        </label>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="include-indirect">
+                            <span class="checkmark"></span>
+                            Include Indirect Benefits
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-divider"></div>
+
+                <div class="info-box">
+                    <h4>Data Sources</h4>
+                    <p>EM-DAT International Disaster Database</p>
+                    <p>Dartmouth Flood Observatory</p>
+                    <p>Period: 2000-2025</p>
+                </div>
+            </aside>
+
+            <!-- Dashboard Content -->
+            <section class="dashboard" id="dashboard-content">
+                <!-- Tab Content: HAZARD -->
+                <div class="tab-content" id="tab-hazard" style="display: none;">
+                    <div class="hazard-section">
+                        <div class="section-header">
+                            <h2>Flood Hazard Analysis</h2>
+                            <span class="coming-soon-badge">More disasters coming soon</span>
+                        </div>
+                        
+                        <div class="hazard-cards">
+                            <div class="hazard-card">
+                                <div class="hazard-card-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                                    </svg>
+                                </div>
+                                <h3>Flood Frequency</h3>
+                                <p class="hazard-value" id="hazard-frequency">4.2</p>
+                                <p class="hazard-label">events per year (avg)</p>
+                            </div>
+                            <div class="hazard-card">
+                                <div class="hazard-card-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12,6 12,12 16,14"/>
+                                    </svg>
+                                </div>
+                                <h3>Avg Duration</h3>
+                                <p class="hazard-value" id="hazard-duration">12.5</p>
+                                <p class="hazard-label">days per event</p>
+                            </div>
+                            <div class="hazard-card">
+                                <div class="hazard-card-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </div>
+                                <h3>Severity Index</h3>
+                                <p class="hazard-value" id="hazard-severity">2.8</p>
+                                <p class="hazard-label">on 1-5 scale</p>
+                            </div>
+                            <div class="hazard-card">
+                                <div class="hazard-card-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </div>
+                                <h3>Area Affected</h3>
+                                <p class="hazard-value" id="hazard-area">45,000</p>
+                                <p class="hazard-label">km² average</p>
+                            </div>
+                        </div>
+
+                        <div class="hazard-content-grid">
+                            <div class="hazard-chart-section">
+                                <div class="chart-header">
+                                    <h3>FLOOD TYPE DISTRIBUTION</h3>
+                                </div>
+                                <div class="hazard-chart-container">
+                                    <canvas id="hazard-chart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="hazard-map-info">
+                                <h3>Risk Zone Distribution</h3>
+                                <div class="hazard-zones">
+                                    <div class="zone high">
+                                        <span class="zone-color"></span>
+                                        <span class="zone-label">High Risk Zone</span>
+                                        <span class="zone-value" id="zone-high">35%</span>
+                                    </div>
+                                    <div class="zone medium">
+                                        <span class="zone-color"></span>
+                                        <span class="zone-label">Medium Risk Zone</span>
+                                        <span class="zone-value" id="zone-medium">42%</span>
+                                    </div>
+                                    <div class="zone low">
+                                        <span class="zone-color"></span>
+                                        <span class="zone-label">Low Risk Zone</span>
+                                        <span class="zone-value" id="zone-low">23%</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="future-features">
+                                    <h4>Coming Soon</h4>
+                                    <ul>
+                                        <li>Tsunami Risk Analysis</li>
+                                        <li>Cyclone/Hurricane Tracking</li>
+                                        <li>Landslide Hazard Maps</li>
+                                        <li>More Countries (India, Philippines, Indonesia)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hazard-timeline">
+                            <div class="chart-header">
+                                <h3>HISTORICAL FLOOD EVENTS TIMELINE</h3>
+                            </div>
+                            <div class="timeline-chart-container">
+                                <canvas id="hazard-timeline-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: RISK (Default) -->
+                <div class="tab-content" id="tab-risk">
+                <!-- Summary Cards -->
+                <div class="summary-cards" id="summary-cards">
+                    <!-- Cards will be populated by JavaScript -->
+                </div>
+
+                <!-- Main Chart Section -->
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <h2 id="main-chart-title">FLOOD DAMAGE IN BANGLADESH</h2>
+                        <div class="chart-actions">
+                            <button class="btn-icon small" title="Save Chart">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                    <polyline points="17,21 17,13 7,13 7,21"/>
+                                    <polyline points="7,3 7,8 15,8"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon small" title="Share">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                                    <polyline points="16,6 12,2 8,6"/>
+                                    <line x1="12" y1="2" x2="12" y2="15"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon small" title="Info">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="16" x2="12" y2="12"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="main-chart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="chart-legend">
+                        <!-- Legend will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="data-table-section">
+                    <div class="table-header">
+                        <h3 id="table-title">FLOOD DAMAGE DATA</h3>
+                        <div class="chart-actions">
+                            <button class="btn-icon small" title="Export Data">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7,10 12,15 17,10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="data-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>2005</th>
+                                    <th>2010</th>
+                                    <th>2015</th>
+                                    <th>2020</th>
+                                    <th>2025</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Secondary Charts -->
+                <div class="secondary-charts">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3>Temporal Trend Analysis</h3>
+                        </div>
+                        <div class="chart-card-body">
+                            <canvas id="trend-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3>Risk Comparison</h3>
+                        </div>
+                        <div class="chart-card-body">
+                            <canvas id="comparison-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Predictions Section -->
+                <div class="predictions-section" id="predictions-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                            Risk Prediction & Modeling
+                        </h2>
+                    </div>
+                    <div class="prediction-cards" id="prediction-cards">
+                        <!-- Prediction cards will be populated by JavaScript -->
+                    </div>
+                    <div class="model-info">
+                        <h4>Model Information</h4>
+                        <div class="model-stats">
+                            <div class="model-stat">
+                                <span class="stat-label">Best Model</span>
+                                <span class="stat-value" id="best-model">Random Forest</span>
+                            </div>
+                            <div class="model-stat">
+                                <span class="stat-label">Cross-Validation R²</span>
+                                <span class="stat-value" id="cv-r2">0.642</span>
+                            </div>
+                            <div class="model-stat">
+                                <span class="stat-label">RMSE</span>
+                                <span class="stat-value" id="model-rmse">1.23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistical Summary -->
+                <div class="stats-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                                <path d="M18 20V10"/>
+                                <path d="M12 20V4"/>
+                                <path d="M6 20v-6"/>
+                            </svg>
+                            Statistical Analysis Summary
+                        </h2>
+                    </div>
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- Stats will be populated by JavaScript -->
+                    </div>
+                </div>
+                </div>
+                <!-- End of Tab Content: RISK -->
+
+                <!-- Tab Content: COST-BENEFIT ANALYZER -->
+                <div class="tab-content" id="tab-cost-benefit" style="display: none;">
+                    <div class="cost-benefit-section">
+                        <div class="section-header">
+                            <h2>Cost-Benefit Analysis</h2>
+                            <span class="coming-soon-badge">More countries coming soon</span>
+                        </div>
+
+                        <!-- Key Metrics -->
+                        <div class="cb-key-metrics">
+                            <div class="cb-metric-card loss">
+                                <div class="cb-metric-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 6l-9.5 9.5-5-5L1 18"/>
+                                        <polyline points="17,6 23,6 23,12"/>
+                                    </svg>
+                                </div>
+                                <div class="cb-metric-content">
+                                    <span class="cb-metric-label">Annual Expected Loss</span>
+                                    <span class="cb-metric-value" id="cb-annual-loss">$2.4B</span>
+                                    <span class="cb-metric-desc">Without mitigation measures</span>
+                                </div>
+                            </div>
+                            <div class="cb-metric-card investment">
+                                <div class="cb-metric-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                    </svg>
+                                </div>
+                                <div class="cb-metric-content">
+                                    <span class="cb-metric-label">Required Investment</span>
+                                    <span class="cb-metric-value" id="cb-investment">$450M</span>
+                                    <span class="cb-metric-desc">Infrastructure & programs</span>
+                                </div>
+                            </div>
+                            <div class="cb-metric-card savings">
+                                <div class="cb-metric-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"/>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                    </svg>
+                                </div>
+                                <div class="cb-metric-content">
+                                    <span class="cb-metric-label">Potential Annual Savings</span>
+                                    <span class="cb-metric-value" id="cb-savings">$1.8B</span>
+                                    <span class="cb-metric-desc">Damage reduction per year</span>
+                                </div>
+                            </div>
+                            <div class="cb-metric-card roi">
+                                <div class="cb-metric-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="20" x2="18" y2="10"/>
+                                        <line x1="12" y1="20" x2="12" y2="4"/>
+                                        <line x1="6" y1="20" x2="6" y2="14"/>
+                                    </svg>
+                                </div>
+                                <div class="cb-metric-content">
+                                    <span class="cb-metric-label">Benefit-Cost Ratio</span>
+                                    <span class="cb-metric-value" id="cb-ratio">4.0x</span>
+                                    <span class="cb-metric-desc">Return on investment</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart and Breakdown -->
+                        <div class="cb-content-grid">
+                            <div class="cb-chart-card">
+                                <div class="chart-header">
+                                    <h3>10-YEAR PROJECTION</h3>
+                                </div>
+                                <div class="cb-chart-container">
+                                    <canvas id="cost-benefit-chart"></canvas>
+                                </div>
+                                <div class="cb-chart-legend">
+                                    <div class="cb-legend-item">
+                                        <span class="cb-legend-color" style="background: #e53e3e;"></span>
+                                        <span>Cumulative Investment</span>
+                                    </div>
+                                    <div class="cb-legend-item">
+                                        <span class="cb-legend-color" style="background: #38a169;"></span>
+                                        <span>Cumulative Benefits</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cb-breakdown-card">
+                                <h3>Investment Breakdown</h3>
+                                <div class="cb-breakdown-list">
+                                    <div class="cb-breakdown-item">
+                                        <span class="cb-breakdown-name">Early Warning Systems</span>
+                                        <div class="cb-breakdown-bar">
+                                            <div class="cb-bar-fill" style="width: 15%; background: #3182ce;"></div>
+                                        </div>
+                                        <span class="cb-breakdown-value">$50M</span>
+                                    </div>
+                                    <div class="cb-breakdown-item">
+                                        <span class="cb-breakdown-name">Flood Barriers & Levees</span>
+                                        <div class="cb-breakdown-bar">
+                                            <div class="cb-bar-fill" style="width: 45%; background: #3182ce;"></div>
+                                        </div>
+                                        <span class="cb-breakdown-value">$200M</span>
+                                    </div>
+                                    <div class="cb-breakdown-item">
+                                        <span class="cb-breakdown-name">Drainage Infrastructure</span>
+                                        <div class="cb-breakdown-bar">
+                                            <div class="cb-bar-fill" style="width: 28%; background: #3182ce;"></div>
+                                        </div>
+                                        <span class="cb-breakdown-value">$120M</span>
+                                    </div>
+                                    <div class="cb-breakdown-item">
+                                        <span class="cb-breakdown-name">Community Programs</span>
+                                        <div class="cb-breakdown-bar">
+                                            <div class="cb-bar-fill" style="width: 8%; background: #3182ce;"></div>
+                                        </div>
+                                        <span class="cb-breakdown-value">$30M</span>
+                                    </div>
+                                    <div class="cb-breakdown-item">
+                                        <span class="cb-breakdown-name">Evacuation Routes</span>
+                                        <div class="cb-breakdown-bar">
+                                            <div class="cb-bar-fill" style="width: 12%; background: #3182ce;"></div>
+                                        </div>
+                                        <span class="cb-breakdown-value">$50M</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendations -->
+                        <div class="cb-recommendations">
+                            <h3>Priority Mitigation Strategies</h3>
+                            <div class="cb-rec-grid">
+                                <div class="cb-rec-card high-priority">
+                                    <div class="cb-rec-header">
+                                        <span class="cb-priority-badge high">HIGH PRIORITY</span>
+                                        <span class="cb-roi-badge">ROI: 8.2x</span>
+                                    </div>
+                                    <h4>Early Warning Systems</h4>
+                                    <p>Real-time flood monitoring and SMS/radio alerts for vulnerable communities</p>
+                                    <div class="cb-rec-stats">
+                                        <span>$50M investment</span>
+                                        <span>25% mortality reduction</span>
+                                    </div>
+                                </div>
+                                <div class="cb-rec-card high-priority">
+                                    <div class="cb-rec-header">
+                                        <span class="cb-priority-badge high">HIGH PRIORITY</span>
+                                        <span class="cb-roi-badge">ROI: 5.4x</span>
+                                    </div>
+                                    <h4>Flood Barriers & Levees</h4>
+                                    <p>Strategic embankment construction along major river systems</p>
+                                    <div class="cb-rec-stats">
+                                        <span>$200M investment</span>
+                                        <span>40% damage reduction</span>
+                                    </div>
+                                </div>
+                                <div class="cb-rec-card medium-priority">
+                                    <div class="cb-rec-header">
+                                        <span class="cb-priority-badge medium">MEDIUM</span>
+                                        <span class="cb-roi-badge">ROI: 3.8x</span>
+                                    </div>
+                                    <h4>Urban Drainage Systems</h4>
+                                    <p>Improved stormwater management in urban flood-prone areas</p>
+                                    <div class="cb-rec-stats">
+                                        <span>$120M investment</span>
+                                        <span>30% urban flood reduction</span>
+                                    </div>
+                                </div>
+                                <div class="cb-rec-card medium-priority">
+                                    <div class="cb-rec-header">
+                                        <span class="cb-priority-badge medium">MEDIUM</span>
+                                        <span class="cb-roi-badge">ROI: 6.1x</span>
+                                    </div>
+                                    <h4>Community Preparedness</h4>
+                                    <p>Training programs and emergency drills for local communities</p>
+                                    <div class="cb-rec-stats">
+                                        <span>$30M investment</span>
+                                        <span>15% casualty reduction</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Future Features Notice -->
+                        <div class="cb-coming-soon">
+                            <h4>Future Enhancements</h4>
+                            <div class="cb-future-list">
+                                <span>More countries analysis</span>
+                                <span>Custom scenario builder</span>
+                                <span>AI-powered recommendations</span>
+                                <span>Exportable reports</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Tab Content: COST-BENEFIT -->
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Flood Disaster Risk Analysis Dashboard | Data: EM-DAT & Dartmouth Flood Observatory | Analysis Period: 2000-2025</p>
+            <p>STAT-495 Statistical Analysis Project | January 2026</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

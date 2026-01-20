@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "R-Debugger",
+            "name": "Debug create.r",
+            "request": "launch",
+            "debugMode": "file",
+            "file": "${workspaceFolder}/create.r",
+            "workingDirectory": "${workspaceFolder}",
+            "allowGlobalDebugging": false
+        },
+        {
+            "type": "R-Debugger",
+            "name": "Attach to running R",
+            "request": "attach",
+            "splitOverwrittenOutput": true
+        }
+    ]
+}
